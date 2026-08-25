@@ -56,7 +56,7 @@ When a production incident occurs:
 | Generate RCA draft                   | Non-deterministic         | Medium        |
 
 
-# AI deployment strategy
+# Workflow Evaluation
 
 The goal is to get the highest value × feasibility × risk profile.
 
@@ -70,3 +70,29 @@ Based on classification the strongest initial candidates are:
 - Generate incident reports — high value, low risk.
 - Generate RCA draft — high value, medium risk.
 
+
+# Deployment Strategy
+
+New workflow
+
+1 - Payment failure 
+
+2 - Monitoring detects anomaly
+
+3 - Create incident
+
+4 - Collect investigation data (Logs / Metrics / Traces / Deployments / Git / DB
+
+        4.1 - Correlate information (AI)
+
+        4.2 - Search historical incidents/runbooks (AI)
+
+5 - Determine probable cause (**AI + human-in-the-loop approval**)
+
+6 - Apply remediation
+
+7 - Validate recovery
+
+8 - Document incident (**AI**)
+
+9 - Postmortem / RCA (**AI + human-in-the-loop**)
