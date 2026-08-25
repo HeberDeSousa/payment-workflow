@@ -40,17 +40,33 @@ When a production incident occurs:
 
 # Identifying deterministic and non-deterministic steps
 
-| Step                        | Type                      | Risk          |
-| --------------------------- | ------------------------- | ------------- |
-| Detect anomaly              | Deterministic/statistical | High          |
-| Create incident             | Deterministic             | Low           |
-| Gather logs                 | Deterministic             | Low           |
-| Correlate logs              | Non-deterministic         | Medium        |
-| Analyze deployment changes  | Mixed                     | Medium        |
-| Investigate database        | Mixed                     | Medium        |
-| Search historical incidents | Non-deterministic         | Low           |
-| Determine root cause        | Non-deterministic         | High          |
-| Execute remediation         | Deterministic             | **Very High** |
-| Validate recovery           | Deterministic             | High          |
-| Generate incident report    | Non-deterministic         | Low           |
-| Generate RCA draft          | Non-deterministic         | Medium        |
+| Step                                 | Type                      | Risk          |
+| ------------------------------------ | ------------------------- | ------------- |
+| Detect anomaly                       | Deterministic/statistical | High          |
+| Create incident                      | Deterministic             | Low           |
+| Gather logs                          | Deterministic             | Low           |
+| Correlate logs                       | Non-deterministic         | Medium        |
+| Analyze deployment changes           | Mixed                     | Medium        |
+| Investigate database                 | Mixed                     | Medium        |
+| Search historical incidents/runbooks | Non-deterministic         | Low           |
+| Determine root cause                 | Non-deterministic         | High          |
+| Execute remediation                  | Deterministic             | **Very High** |
+| Validate recovery                    | Deterministic             | High          |
+| Generate incident report             | Non-deterministic         | Low           |
+| Generate RCA draft                   | Non-deterministic         | Medium        |
+
+
+# AI deployment strategy
+
+The goal is to get the highest value × feasibility × risk profile.
+
+
+Investigation phase is potentially the biggest business opportunity, but not necessarily the best first AI deployment opportunity. 
+Based on classification the strongest initial candidates are:
+
+
+- Search historical incidents — very high value, low risk.
+- Correlate logs — high value, medium risk.
+- Generate incident reports — high value, low risk.
+- Generate RCA draft — high value, medium risk.
+
