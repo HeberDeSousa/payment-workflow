@@ -37,3 +37,20 @@ When a production incident occurs:
 8 - Document incident
 
 9 - Postmortem / RCA
+
+# Identifying deterministic and non-deterministic steps
+
+| Step                        | Type                      | Risk          |
+| --------------------------- | ------------------------- | ------------- |
+| Detect anomaly              | Deterministic/statistical | High          |
+| Create incident             | Deterministic             | Low           |
+| Gather logs                 | Deterministic             | Low           |
+| Correlate logs              | Non-deterministic         | Medium        |
+| Analyze deployment changes  | Mixed                     | Medium        |
+| Investigate database        | Mixed                     | Medium        |
+| Search historical incidents | Non-deterministic         | Low           |
+| Determine root cause        | Non-deterministic         | High          |
+| Execute remediation         | Deterministic             | **Very High** |
+| Validate recovery           | Deterministic             | High          |
+| Generate incident report    | Non-deterministic         | Low           |
+| Generate RCA draft          | Non-deterministic         | Medium        |
