@@ -154,7 +154,7 @@ The AI model itself doesn't need to know how Kafka, AWS, or OpenSearch works.
 
 ## Kafka integration
 
-A. Kafka as a source of incident context
+### Kafka as a source of incident context
 
 Suppose PayFlow processes payment events:
 
@@ -193,7 +193,7 @@ The consumer could filter events based on:
 
 For example, if an incident starts at 14:30 UTC the system could retrieve events from 14:20 → 14:40 rather than sending millions of Kafka messages to the LLM.
 
-## Kafka should feed a deterministic preprocessing layer
+### Kafka should feed a deterministic preprocessing layer
 
 Kafka could produce a large amount of events per hour or even per second so we have to avoid every event going directly to LLM.
 So the flow would be:
@@ -225,7 +225,7 @@ The AI receives:
 ```
 Now the LLM can reason about the information instead of processing raw event streams.
 
-B. AWS Integration
+# AWS Integration
 
 AI platform gets access through AWS APIs exposed as controlled tools.
 
@@ -239,5 +239,126 @@ Tool Gateway
 ─ RDSMetricsTool
 ─ LambdaTool
 
-Each tool needs to have a very narrow contract.
+**Each tool needs to have a very narrow contract.**
 
+## CloudWatch
+
+Suppose the incident is: "Payment service latency increased."
+
+AI could invoke:
+```
+get_metric(
+    service="payment-processing",
+    metric="Latency",
+    start="14:20",
+    end="14:40"
+)
+```
+The tool queries CloudWatch and returns structured information:
+```
+{
+  "metric": "Latency",
+  "p50": 210,
+  "p95": 1840,
+  "p99": 4210,
+  "baseline_p95": 350,
+  "timestamp": "14:32"
+}
+```
+
+LLM doesn't directly interact with AWS but receives the result and reasons about it.
+
+### CloudWatch Logs
+
+For AWS-hosted services, CloudWatch Logs could be exposed through a similar tool:
+```
+search_logs(
+    service="payment-processing",
+    start="14:30",
+    end="14:40",
+    query="TimeoutException"
+)
+```
+
+The tool returns: 
+14:32:01 TimeoutException PaymentProviderClient
+14:32:03 TimeoutException PaymentProviderClient
+14:32:04 TimeoutException PaymentProviderClient
+...
+
+adding preprocessing the tool should return to the LLM:
+```
+Total occurrences: 8,923
+
+First occurrence: 14:32:01
+
+Affected component:
+PaymentProviderClient
+
+Top exception:
+SocketTimeoutException
+
+Frequency:
++1,340% compared with baseline
+```
+## AWS S3 as a knowledge repository
+
+S3 could be used for historical knowledge. For example:
+
+```
+s3://payflow-ai-knowledge/
+
+    incidents/
+    postmortems/
+    runbooks/
+    architecture/
+    service-documents/
+```
+
+A pipeline can process those documents:
+
+S3 -> Document ingestion -> Chunking -> Metadata extraction -> Embeddings -> Vector database
+
+The retrieval system searches:
+
+- previous incidents
+- postmortems
+- runbooks
+- architecture documents
+
+The goal is for AI to recognize and relate previous problems 
+
+## EKS / Kubernetes integration
+
+Expose read-only tools such as:
+- get_pods()
+- get_deployments()
+- get_events()
+- get_pod_logs()
+- get_resource_usage()
+
+AI could request:
+```
+get_deployment(
+    namespace="payments",
+    deployment="payment-processing"
+)
+```
+
+and receive:
+```
+{
+  "version": "v4.18",
+  "replicas": 12,
+  "ready": 12,
+  "deployment_time": "14:27"
+}
+```
+
+Then correlate that with:
+
+```
+14:27 deployment
+14:32 error increase
+```
+generating strong evidence
