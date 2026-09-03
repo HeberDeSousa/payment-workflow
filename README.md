@@ -362,3 +362,81 @@ Then correlate that with:
 14:32 error increase
 ```
 generating strong evidence
+
+## IAM and security
+
+Use IAM roles with least privilege with permissions limited to:
+
+- CloudWatch read
+- S3 read specific buckets
+- EKS read-only
+- RDS monitoring read
+
+**It would not have AdministratorAccess or unrestricted like**<br>
+- **s3:***
+- **ec2:***
+- **rds:***
+- **eks:***
+
+### Data security
+
+Production logs can contain sensitive information so before sending data to an external LLM we need to introduce the following workflow:
+
+Production data -> Data classification -> PII / secret detection -> Redaction -> Context filtering -> LLM
+
+Resulting in
+
+Before:
+```
+customerId=12345
+idNumber=1111111111111111
+address=abc, 123
+error=TimeoutException
+```
+After:
+```
+customerId=[REDACTED]
+idNumber=[REDACTED]
+address=[REDACTED]
+error=TimeoutException
+```
+
+# Database integration
+
+We will choose a more conservative approach.
+AI should initially have access to:
+- read-only metadata
+- query performance metrics
+- connection pool metrics
+- locks
+- deadlocks
+- slow queries
+- database health
+
+For example:
+- get_database_health()
+- get_slow_queries()
+- get_connection_pool()
+- get_locks()
+
+AI could recieve:
+
+```
+Connection pool:
+95/100
+
+Waiting connections:
+37
+
+Slow queries:
++320%
+
+Deadlocks:
+0
+```
+
+It could then hypothesize:
+
+"Database connection exhaustion may be contributing to the latency increase."
+
+But the AI would not have arbitrary SQL execution privileges.
