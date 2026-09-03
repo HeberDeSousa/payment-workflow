@@ -96,3 +96,57 @@ New workflow
 8 - Document incident (**AI**)
 
 9 - Postmortem / RCA (**AI + human-in-the-loop**)
+
+
+# Overall architecture
+
+Assume the fictional company already has:
+
+Kafka — event streaming
+AWS — infrastructure
+CloudWatch — AWS logs/metrics
+OpenSearch — application logs
+Prometheus/Grafana — application metrics
+Jira/ServiceNow — incident management
+GitHub — source code
+PostgreSQL — application database
+Kubernetes/EKS — application platform
+Confluence/S3 — documentation and historical incident data
+
+# AI platform architecture implementation
+
+                         EXISTING SYSTEMS
+ ┌─────────────────────────────────────────────────────────────┐
+ │                                                             │
+ │  Kafka       AWS        OpenSearch    Prometheus    GitHub  │
+ │    │          │              │            │           │     │
+ └────┼──────────┼──────────────┼────────────┼───────────┼─────┘
+      │          │              │            │           │
+      ▼          ▼              ▼            ▼           ▼
+ ┌──────────────────────────────────────────────────────────────┐
+ │                    Integration Layer                         │
+ │                                                              │
+ │ API Gateway │ Kafka Consumers │ AWS APIs │ Observability API │
+ └────────────────────────────┬─────────────────────────────────┘
+                              │
+                              ▼
+                   ┌─────────────────────┐
+                   │ AI Orchestrator     │
+                   │                     │
+                   │ LLM + Tool Calling  │
+                   └──────────┬──────────┘
+                              │
+             ┌────────────────┼────────────────┐
+             ▼                ▼                ▼
+      Historical Search   Investigation   Report Generator
+             │                │                │
+             └────────────────┼────────────────┘
+                              ▼
+                       Knowledge Layer
+                              │
+                    ┌─────────┴─────────┐
+                    ▼                   ▼
+                Vector DB          Search Index
+
+
+                
