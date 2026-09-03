@@ -113,8 +113,9 @@ PostgreSQL — application database
 Kubernetes/EKS — application platform
 Confluence/S3 — documentation and historical incident data
 
-# AI platform architecture implementation
+## AI platform architecture implementation
 
+```
                          EXISTING SYSTEMS
  ┌─────────────────────────────────────────────────────────────┐
  │                                                             │
@@ -147,6 +148,96 @@ Confluence/S3 — documentation and historical incident data
                     ┌─────────┴─────────┐
                     ▼                   ▼
                 Vector DB          Search Index
+```
 
+The AI model itself doesn't need to know how Kafka, AWS, or OpenSearch works.
 
+## Kafka integration
+
+A. Kafka as a source of incident context
+
+Suppose PayFlow processes payment events:
+
+- payment.created
+- payment.authorized
+- payment.failed
+- payment.completed
                 
+The AI shouldn't consume the entire Kafka cluster. Deploy a dedicated AI Investigation Consumer instead.
+
+```
+Kafka
+  │
+  ├── payment.created
+  ├── payment.authorized
+  ├── payment.failed
+  └── payment.completed
+          │
+          ▼
+   AI Event Consumer
+          │
+          ▼
+   Filtering / Aggregation
+          │
+          ▼
+    Incident Context Store
+```
+
+The consumer could filter events based on:
+- service
+- environment
+- timestamp
+- correlation_id
+- event_type
+- incident_id
+
+For example, if an incident starts at 14:30 UTC the system could retrieve events from 14:20 → 14:40 rather than sending millions of Kafka messages to the LLM.
+
+## Kafka should feed a deterministic preprocessing layer
+
+Kafka could produce a large amount of events per hour or even per second so we have to avoid every event going directly to LLM.
+So the flow would be:
+
+Kafka -> Consumer -> Stream processing (Filter, Aggregate, Deduplicate, Correlate, Enrich -> Incident Context -> AI
+
+Example:
+
+10,000 payment.failed events<br>
+             ↓<br>
+Grouped by provider<br>
+             ↓<br>
+Provider A: 8,921 failures<br>
+Provider B: 127 failures<br>
+Provider C: 52 failures
+
+The AI receives:
+```
+{
+  "service": "payment-processing",
+  "window": "14:30-14:40",
+  "failures": 9100,
+  "providers": {
+    "A": 8921,
+    "B": 127,
+    "C": 52
+  }
+}
+```
+Now the LLM can reason about the information instead of processing raw event streams.
+
+B. AWS Integration
+
+AI platform gets access through AWS APIs exposed as controlled tools.
+
+AI Agent<br>
+↓<br>
+Tool Gateway
+─ CloudWatchTool
+─ EC2Tool
+─ EKSObservabilityTool
+─ S3Tool
+─ RDSMetricsTool
+─ LambdaTool
+
+Each tool needs to have a very narrow contract.
+
